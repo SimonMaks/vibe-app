@@ -1,0 +1,636 @@
+.chat-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: var(--bg-dark);
+}
+
+.empty-chat {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-dim);
+    background-color: var(--bg-dark);
+    font-weight: 500;
+}
+
+.chat-header {
+    padding: 15px 25px;
+    background-color: var(--bg-panel);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.chat-header .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #8e44ad);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+}
+
+.chat-header .user-name {
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 2px;
+}
+
+.chat-header .status {
+    color: #00c853;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.messages-list {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.message-wrapper {
+    max-width: 65%;
+    display: flex;
+    flex-direction: column;
+}
+
+.message-wrapper.me {
+    align-self: flex-end;
+}
+
+.message-wrapper.other {
+    align-self: flex-start;
+}
+
+.message-bubble {
+    padding: 10px 16px;
+    border-radius: 16px;
+    font-size: 15px;
+    line-height: 1.4;
+    position: relative;
+    word-break: break-word;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.me .message-bubble {
+    background-color: var(--msg-me);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.other .message-bubble {
+    background-color: var(--msg-other);
+    color: var(--text-main);
+    border-bottom-left-radius: 4px;
+}
+
+.message-time {
+    font-size: 11px;
+    display: block;
+    text-align: right;
+    margin-top: 6px;
+    opacity: 0.7;
+}
+
+.chat-input-area {
+    padding: 16px 24px;
+    background-color: var(--bg-panel);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.chat-input-area input {
+    flex: 1;
+    background-color: var(--bg-input);
+    border: 1px solid transparent;
+    padding: 14px 20px;
+    border-radius: 24px;
+    color: var(--text-main);
+    outline: none;
+    font-size: 15px;
+    transition: border-color 0.2s;
+}
+
+.chat-input-area input:focus {
+    border-color: #333;
+}
+
+.chat-input-area button {
+    background-color: var(--accent);
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-size: 14px;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.chat-input-area button:hover {
+    background-color: var(--accent-hover);
+}
+
+.chat-input-area button:active {
+    transform: scale(0.96);
+}
+
+/* =========================================
+   НОВЫЕ СТИЛИ ДЛЯ ЦИТИРОВАНИЯ И МЕНЮ
+   ========================================= */
+
+/* Блок цитаты внутри самого сообщения */
+.quote-block {
+    background-color: rgba(0, 0, 0, 0.15);
+    border-left: 3px solid var(--accent);
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.me .quote-block {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-left-color: #8bb3d6;
+}
+
+.quote-sender {
+    font-weight: bold;
+    color: var(--accent);
+    margin-bottom: 2px;
+    font-size: 12px;
+}
+
+.me .quote-sender {
+    color: #cde4ff;
+}
+
+.quote-text {
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 250px;
+}
+
+.me .quote-text {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Контейнер ввода, чтобы превью ответа и инпут были одним блоком */
+.input-container {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-panel);
+    border-top: 1px solid var(--border-color);
+}
+
+/* Плашка предпросмотра цитаты над полем ввода */
+.reply-preview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background-color: var(--bg-hover);
+    border-left: 4px solid var(--accent);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.reply-preview-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.reply-preview-sender {
+    color: var(--accent);
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 2px;
+}
+
+.reply-preview-text {
+    color: var(--text-dim);
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 400px;
+}
+
+.reply-cancel {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.2s;
+}
+
+.reply-cancel:hover {
+    color: #ff5252;
+}
+
+/* =========================================
+   СТИЛИ ДЛЯ ЦИТИРОВАНИЯ И КОНТЕКСТНОГО МЕНЮ
+   ========================================= */
+
+/* 1. Блок цитаты внутри самого сообщения (.message-reply-box) */
+.message-reply-box {
+    /* Базовый цвет для цитаты в чужих сообщениях (чуть светлее фона) */
+    background-color: rgba(255, 255, 255, 0.08); 
+    border-left: 3px solid var(--accent);
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+/* Эффект при наведении мышкой на цитату */
+.message-reply-box:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Имя отправителя в цитате */
+.reply-sender {
+    color: var(--accent);
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 3px;
+}
+
+/* Текст самой цитаты */
+.reply-text {
+    color: var(--text-dim);
+    font-size: 13px;
+    white-space: nowrap;       
+    overflow: hidden;
+    text-overflow: ellipsis;   
+    max-width: 250px;
+}
+
+/* --- Специфичные стили для цитаты внутри МОЕГО сообщения (.me) --- */
+.me .message-reply-box {
+    /* На синем фоне нужно чуть больше белого, чтобы выделить блок */
+    background-color: rgba(255, 255, 255, 0.15); 
+    border-left-color: #ffffff; /* Белая полоска слева смотрится круче на синем */
+}
+
+.me .message-reply-box:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
+.me .reply-sender {
+    color: #ffffff; /* Белое имя отправителя на синем фоне */
+}
+
+.me .reply-text {
+    color: rgba(255, 255, 255, 0.85); /* Почти белый текст цитаты */
+}
+
+
+/* =========================================
+   2. КОНТЕЙНЕР ВВОДА И ПРЕВЬЮ (НАД ИНПУТОМ)
+   ========================================= */
+
+.input-container {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-panel);
+    border-top: 1px solid var(--border-color);
+}
+
+.reply-preview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background-color: var(--bg-hover);
+    border-left: 4px solid var(--accent);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.reply-preview-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.reply-preview-sender {
+    color: var(--accent);
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 2px;
+}
+
+.reply-preview-text {
+    color: var(--text-dim);
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 400px;
+}
+
+.reply-cancel {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.2s;
+}
+
+.reply-cancel:hover {
+    color: #ff5252;
+}
+
+.chat-input-area {
+    border-top: none; /* Убираем бордер, так как он теперь у .input-container */
+}
+
+
+/* =========================================
+   3. КАСТОМНОЕ КОНТЕКСТНОЕ МЕНЮ (ПКМ)
+   ========================================= */
+
+.custom-context-menu {
+    position: fixed;
+    background-color: #2a2a2a; /* Чуть светлее черного */
+    border: 1px solid #333;
+    border-radius: 8px;
+    min-width: 160px;
+    z-index: 10000; 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    overflow: hidden;
+}
+
+.context-menu-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    color: white;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.context-menu-item:hover {
+    background-color: var(--accent);
+}
+
+/* =========================================
+   АНИМАЦИЯ ПОДСВЕТКИ СООБЩЕНИЯ 
+   ========================================= */
+
+@keyframes flashHighlight {
+    0% { background-color: rgba(74, 144, 226, 0.6); } /* Яркая синяя вспышка */
+    100% { background-color: transparent; }           /* Плавно исчезает */
+}
+
+/* Этот класс вешается на message-wrapper, но анимируем мы сам пузырь внутри */
+.highlight-animation .message-bubble {
+    animation: flashHighlight 2s ease-out forwards;
+}
+
+/* Если это НАШЕ сообщение, вспышка должна быть чуть светлее, чтобы было видно на синем фоне */
+.me.highlight-animation .message-bubble {
+    animation: flashHighlightMe 2s ease-out forwards;
+}
+
+@keyframes flashHighlightMe {
+    0% { background-color: rgba(255, 255, 255, 0.4); } /* Белая вспышка на синем фоне */
+    100% { background-color: var(--msg-me); }          /* Возвращается к родному синему */
+}
+
+/* =========================================
+   ПЛАВАЮЩАЯ КНОПКА "СКОРОЛЛ ВНИЗ"
+   ========================================= */
+
+/* Убедись, что у основного контейнера стоит relative, чтобы кнопка позиционировалась внутри него */
+.chat-container {
+    position: relative; 
+}
+
+.scroll-bottom-btn {
+    position: absolute;
+    right: 20px;
+    /* Поднимаем ее чуть выше поля ввода (зависит от высоты твоего input-container) */
+    bottom: 90px; 
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: var(--bg-panel);
+    color: var(--text-dim);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 100;
+    transition: all 0.2s ease;
+}
+
+/* Красивый ховер-эффект */
+.scroll-bottom-btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--accent);
+    transform: translateY(-2px); /* Слегка подпрыгивает при наведении */
+    box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+}
+
+/* Если открыто превью ответа (reply-preview), поднимаем кнопку еще выше, чтобы они не наложились */
+.input-container:has(.reply-preview) ~ .scroll-bottom-btn {
+    bottom: 150px; 
+}
+
+.search-loader {
+    text-align: center;
+    padding: 8px 16px;
+    background-color: var(--accent);
+    color: white;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    width: fit-content;
+    margin: 0 auto 10px auto;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    animation: pulseSearch 1.5s infinite;
+}
+
+@keyframes pulseSearch {
+    0% { opacity: 0.7; transform: scale(0.98); }
+    50% { opacity: 1; transform: scale(1.02); }
+    100% { opacity: 0.7; transform: scale(0.98); }
+}
+
+/* Разделитель даты в списке */
+.date-separator {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+    pointer-events: none;
+}
+
+.date-separator span {
+    background-color: rgba(33, 33, 33, 0.4);
+    color: white;
+    padding: 4px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Контейнер, который прилипает к верху */
+.floating-date-wrapper {
+    position: sticky;
+    top: 10px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    z-index: 1000;
+    pointer-events: none;
+    /* Убираем height: 0, если она схлопывает контейнер */
+    height: 30px;
+    margin-bottom: -30px; /* Компенсируем высоту, чтобы сообщения не уезжали вниз */
+}
+
+/* Сама плашка с датой */
+.floating-date {
+    background-color: rgba(33, 33, 33, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+
+    /* Эти свойства центрируют текст ВНУТРИ фона */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+
+    opacity: 0;
+    transform: translateY(-5px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+
+    width: fit-content;
+    height: fit-content;
+}
+
+/* Когда плашка становится видимой */
+.floating-date.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.floating-date.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Убедись, что у списка нет конфликтующих свойств */
+.messages-list {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    /* Убери padding-top, если плашка наезжает на хедер некрасиво,
+       лучше регулировать через top у .floating-date-wrapper */
+}
+
+.custom-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 280px;
+    background: rgba(30, 30, 30, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 9999;
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    animation: toastSlideIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    transition: transform 0.2s;
+}
+
+.custom-toast:hover {
+    transform: scale(1.02);
+    background: rgba(40, 40, 40, 0.9);
+}
+
+.toast-avatar {
+    width: 40px;
+    height: 40px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    flex-shrink: 0;
+}
+
+.toast-content {
+    flex: 1;
+    overflow: hidden;
+}
+
+.toast-sender {
+    font-weight: bold;
+    font-size: 14px;
+    color: var(--accent);
+    margin-bottom: 2px;
+}
+
+.toast-text {
+    font-size: 13px;
+    color: #eee;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 4px;
+    font-size: 12px;
+}
+
+.toast-close:hover {
+    color: white;
+}
+
+@keyframes toastSlideIn {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}

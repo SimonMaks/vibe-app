@@ -1,0 +1,50 @@
+/* --- 1. ПЕРЕМЕННЫЕ (THEME) --- */
+:root {
+  --bg-dark: #0a0a0a;
+  --bg-panel: #141414;
+  --bg-hover: #1f1f1f;
+  --bg-input: #222222;
+  --accent: #4a90e2;
+  --accent-hover: #357ebd;
+  --text-main: #ffffff;
+  --text-dim: #888888;
+  --msg-me: #2b5278;
+  --msg-other: #262626;
+  --border-color: #222222;
+}
+
+/* --- 2. БАЗОВЫЕ НАСТРОЙКИ --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  overflow: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* --- 3. ГЛАВНЫЙ КОНТЕЙНЕР --- */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
