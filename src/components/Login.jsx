@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { API_URL } from '../api/config';
+import { getAuth, signInWithCustomToken } from 'firebase/auth'; // 🔐 ДОБАВИЛИ ИМПОРТ
 import './Login.css';
 
 export default function Login({ onLoginSuccess }) {
@@ -52,14 +53,19 @@ export default function Login({ onLoginSuccess }) {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok && data.token) {
+        // 🔐 БРОНЯ: Официально логинимся в Firebase с помощью токена от сервера!
+        const auth = getAuth();
+        await signInWithCustomToken(auth, data.token);
+
         localStorage.setItem('chat-user', email.toLowerCase().trim());
         onLoginSuccess(email.toLowerCase().trim());
       } else {
         setError(data.error || 'Неверный код');
       }
     } catch (err) {
-      setError('Ошибка проверки кода');
+      console.error("Ошибка при входе:", err);
+      setError('Ошибка проверки кода или входа в систему');
     } finally {
       setLoading(false);
     }
