@@ -2,16 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { SOCKET_URL, API_URL } from '../api/config';
 import { formatTime } from '../utils/dateUtils';
+import { getAuth } from 'firebase/auth'; // 🔐 БРОНЯ: Импортируем Firebase Auth
 import './ChatArea.css';
 
-const socket = io(SOCKET_URL);
+// 🔐 БРОНЯ: Отключаем автоматическое подключение. 
+// Мы подключимся вручную только тогда, когда получим токен!
+const socket = io(SOCKET_URL, { autoConnect: false });
 
 export default function ChatArea({ activeChat, currentUser }) {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
-  const [toast, setToast] = useState(null); // Для красивого пуша
+  const [toast, setToast] = useState(null);
 
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -28,6 +31,15 @@ export default function ChatArea({ activeChat, currentUser }) {
 
   const selectedChat = activeChat?.id;
   const otherEmail = activeChat?.email;
+
+  // 🔐 БРОНЯ: Удобная функция для получения свежего токена
+  const getToken = async () => {
+    const auth = getAuth();
+    if (auth.currentUser) {
+      return await auth.currentUser.getIdToken();
+    }
+    return null;
+  };
 
   const getRelativeDate = (dateString) => {
     if (!dateString) return '';
@@ -55,21 +67,47 @@ export default function ChatArea({ activeChat, currentUser }) {
 
   useEffect(() => {
     if (!selectedChat) return;
+
+    // Сбрасываем стейт при смене чата
     setMessages([]);
     setReplyTo(null);
     setHasMore(true);
 
-    fetch(`${API_URL}/api/messages/${selectedChat}`)
-        .then(res => res.json())
-        .then(data => {
-          const fixedMessages = data.map(fixMessageTime);
-          setMessages(fixedMessages);
-          if (data.length < 30) setHasMore(false);
-          setTimeout(() => scrollToBottom("auto"), 50);
-        })
-        .catch(console.error);
+    const initChat = async () => {
+      const token = await getToken();
+      if (!token) return; // Если нет токена, ничего не делаем
 
-    socket.emit('join_chat', selectedChat);
+      // 🔐 БРОНЯ: Передаем токен в сокет и подключаемся
+      socket.auth = { token };
+      socket.connect();
+
+      socket.on("reconnect_attempt", async () => {
+        const freshToken = await getToken();
+        socket.auth = { token: freshToken };
+      });
+
+      // 🔐 БРОНЯ: Добавляем токен в GET-запрос истории сообщений
+      try {
+        const res = await fetch(`${API_URL}/api/messages/${selectedChat}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!res.ok) throw new Error('Ошибка доступа');
+        
+        const data = await res.json();
+        const fixedMessages = data.map(fixMessageTime);
+        setMessages(fixedMessages);
+        if (data.length < 30) setHasMore(false);
+        setTimeout(() => scrollToBottom("auto"), 50);
+      } catch (error) {
+        console.error("Ошибка загрузки сообщений:", error);
+      }
+
+      // Заходим в комнату сокета
+      socket.emit('join_chat', selectedChat);
+    };
+
+    initChat();
 
     const messageHandler = (msg) => {
       const fixedMsg = fixMessageTime(msg);
@@ -83,12 +121,10 @@ export default function ChatArea({ activeChat, currentUser }) {
         } else {
           new Audio('./notify.mp3').play().catch(() => {});
 
-          // Показываем внутренний тост
           setToast({ sender: msg.sender, text: msg.text });
           clearTimeout(toastTimeoutRef.current);
           toastTimeoutRef.current = setTimeout(() => setToast(null), 5000);
 
-          // Системное уведомление
           if (Notification.permission === "granted") {
             new Notification(msg.sender, {
               body: msg.text,
@@ -102,7 +138,12 @@ export default function ChatArea({ activeChat, currentUser }) {
     };
 
     socket.on('receive_message', messageHandler);
-    return () => socket.off('receive_message', messageHandler);
+    
+    return () => {
+      socket.off('receive_message', messageHandler);
+      // Опционально: можно отключать сокет при закрытии чата
+      // socket.disconnect(); 
+    };
   }, [selectedChat, currentUser]);
 
   const handleScroll = async (e) => {
@@ -125,8 +166,12 @@ export default function ChatArea({ activeChat, currentUser }) {
       setIsLoadingMore(true);
       const oldScrollHeight = scrollHeight;
       const cursor = messages[0].id;
+      
       try {
-        const res = await fetch(`${API_URL}/api/messages/${selectedChat}?cursor=${cursor}`);
+        const token = await getToken(); // 🔐 БРОНЯ
+        const res = await fetch(`${API_URL}/api/messages/${selectedChat}?cursor=${cursor}`, {
+          headers: { 'Authorization': `Bearer ${token}` } // 🔐 БРОНЯ
+        });
         const data = await res.json();
         if (data.length < 30) setHasMore(false);
         const fixedData = data.map(fixMessageTime);
@@ -154,10 +199,14 @@ export default function ChatArea({ activeChat, currentUser }) {
     let found = false;
     let stillHasMore = hasMore;
     let attempts = 0;
+    
     while (!found && attempts < 5 && stillHasMore) {
       attempts++;
       try {
-        const res = await fetch(`${API_URL}/api/messages/${selectedChat}?cursor=${currentCursor}`);
+        const token = await getToken(); // 🔐 БРОНЯ
+        const res = await fetch(`${API_URL}/api/messages/${selectedChat}?cursor=${currentCursor}`, {
+          headers: { 'Authorization': `Bearer ${token}` } // 🔐 БРОНЯ
+        });
         const data = await res.json();
         if (data.length < 30) stillHasMore = false;
         const fixedData = data.map(fixMessageTime);
@@ -166,6 +215,7 @@ export default function ChatArea({ activeChat, currentUser }) {
         else currentCursor = fixedData[0]?.id;
       } catch (err) { break; }
     }
+    
     if (fetchedData.length > 0) {
       setMessages(prev => [...fetchedData, ...prev]);
       setHasMore(stillHasMore);
@@ -188,10 +238,15 @@ export default function ChatArea({ activeChat, currentUser }) {
     setInputText('');
     setReplyTo(null);
     const payload = { text, sender: currentUser, replyTo: replyData, createdAt: new Date().toISOString() };
+    
     try {
+      const token = await getToken(); // 🔐 БРОНЯ
       await fetch(`${API_URL}/api/messages/${selectedChat}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // 🔐 БРОНЯ
+        },
         body: JSON.stringify(payload)
       });
     } catch (err) { console.error(err); }
