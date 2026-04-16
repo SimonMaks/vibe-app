@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore"; // Добавили эту строку
+import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth"; // 1. Добавь этот импорт
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -11,4 +12,5 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app); // Экспортируем базу данных, чтобы использовать в компонентах
+export const db = getFirestore(app);
+export const auth = getAuth(app); // 2. Экспортируй auth
