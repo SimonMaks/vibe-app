@@ -43,8 +43,10 @@ export default function Login({ onLoginSuccess }) {
   const handleVerifyCode = async () => {
     if (!code) return setError('Введите код');
     setLoading(true);
+    setError('');
 
     try {
+      console.log("Отправляю код на проверку...");
       const response = await fetch(`${API_URL}/verify-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -52,20 +54,25 @@ export default function Login({ onLoginSuccess }) {
       });
 
       const data = await response.json();
+      console.log("Ответ от сервера:", data); // 👀 СМОТРИМ В КОНСОЛЬ БРАУЗЕРА (F12)
 
-      if (response.ok && data.token) {
-        // 🔐 БРОНЯ: Официально логинимся в Firebase с помощью токена от сервера!
+      if (data.success && data.token) {
+        console.log("Код верный, токен получен. Пытаюсь войти в Firebase...");
+        
         const auth = getAuth();
-        await signInWithCustomToken(auth, data.token);
+        // Пытаемся залогиниться
+        const userCredential = await signInWithCustomToken(auth, data.token);
+        
+        console.log("Вход в Firebase успешен!", userCredential.user);
 
         localStorage.setItem('chat-user', email.toLowerCase().trim());
         onLoginSuccess(email.toLowerCase().trim());
       } else {
-        setError(data.error || 'Неверный код');
+        setError(data.error || 'Неверный код или ошибка сервера');
       }
     } catch (err) {
-      console.error("Ошибка при входе:", err);
-      setError('Ошибка проверки кода или входа в систему');
+      console.error("ПОЛНАЯ ОШИБКА НА ФРОНТЕ:", err);
+      setError('Ошибка входа: ' + err.message);
     } finally {
       setLoading(false);
     }
