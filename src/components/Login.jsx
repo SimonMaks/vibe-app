@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { API_URL } from '../api/config';
-import { auth } from '../api/firebase';
+import { auth } from '../firebase';
 import { signInWithCustomToken } from 'firebase/auth'; // 🔐 ДОБАВИЛИ ИМПОРТ
 import './Login.css';
 
