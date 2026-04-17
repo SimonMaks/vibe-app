@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { API_URL } from '../api/config';
 import './Sidebar.css';
 
@@ -6,7 +6,56 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
   const [chats, setChats] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false); // Состояние модалки
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // --- ЛОГИКА ИЗМЕНЕНИЯ РАЗМЕРА ---
+  const [sidebarWidth, setSidebarWidth] = useState(300);
+  const [isResizing, setIsResizing] = useState(false);
+  const sidebarRef = useRef(null);
+
+  const startResizing = useCallback((e) => {
+    setIsResizing(true);
+    e.preventDefault();
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  const resize = useCallback((e) => {
+    if (isResizing && sidebarRef.current) {
+      let newWidth = e.clientX;
+      const minWidth = 250;
+      const maxWidth = window.innerWidth * 0.6;
+
+      if (newWidth < minWidth) newWidth = minWidth;
+      if (newWidth > maxWidth) newWidth = maxWidth;
+
+      setSidebarWidth(newWidth);
+    }
+  }, [isResizing]);
+
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener('mousemove', resize);
+      window.addEventListener('mouseup', stopResizing);
+      document.body.style.userSelect = 'none';
+    } else {
+      window.removeEventListener('mousemove', resize);
+      window.removeEventListener('mouseup', stopResizing);
+      document.body.style.userSelect = 'auto'; 
+    }
+    return () => {
+      window.removeEventListener('mousemove', resize);
+      window.removeEventListener('mouseup', stopResizing);
+    };
+  }, [isResizing, resize, stopResizing]);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchMyChats();
+    }
+  }, [currentUser]);
 
   const fetchMyChats = async () => {
     try {
@@ -17,14 +66,6 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
       console.error("Ошибка загрузки чатов:", err);
     }
   };
-
-  useEffect(() => {
-    if (currentUser) {
-      fetchMyChats();
-      const interval = setInterval(fetchMyChats, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [currentUser]);
 
   const handleSearch = async (e) => {
     const val = e.target.value;
@@ -68,24 +109,30 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
   };
 
   return (
-      <aside className="sidebar">
+    <aside 
+      className="sidebar" 
+      ref={sidebarRef} 
+      style={{ width: `${sidebarWidth}px` }}
+    >
+      <div className="sidebar-inner-content">
+        
         <div className="search-section">
           <input
-              type="text"
-              placeholder="Поиск по имени..."
-              value={searchQuery}
-              onChange={handleSearch}
-              className="search-input"
+            type="text"
+            placeholder="Поиск по имени..."
+            value={searchQuery}
+            onChange={handleSearch}
+            className="search-input"
           />
           {searchResults.length > 0 && (
-              <div className="search-results">
-                {searchResults.map(user => (
-                    <div key={user.email} onClick={() => startChat(user)} className="search-result-item">
-                      <div className="search-result-name">{user.name}</div>
-                      <div className="search-result-email">{user.email}</div>
-                    </div>
-                ))}
-              </div>
+            <div className="search-results">
+              {searchResults.map(user => (
+                <div key={user.email} onClick={() => startChat(user)} className="search-result-item">
+                  <div className="search-result-name">{user.name}</div>
+                  <div className="search-result-email">{user.email}</div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
@@ -95,47 +142,53 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
             const otherEmail = chat.participants.find(p => p !== currentUser);
             const isActive = activeChat?.id === chat.id;
             return (
-                <div
-                    key={chat.id}
-                    onClick={() => onSelectChat(chat.id, otherEmail)}
-                    className={`chat-list-item ${isActive ? 'active' : ''}`}
-                >
-                  <div className="chat-avatar">
-                    {otherEmail ? otherEmail[0].toUpperCase() : '?'}
-                  </div>
-                  <div className="chat-info">
-                    <div className="chat-name">{otherEmail}</div>
-                  </div>
+              <div
+                key={chat.id}
+                onClick={() => onSelectChat(chat.id, otherEmail)}
+                className={`chat-list-item ${isActive ? 'active' : ''}`}
+              >
+                <div className="chat-avatar">
+                  {otherEmail ? otherEmail[0].toUpperCase() : '?'}
                 </div>
+                <div className="chat-info">
+                  <div className="chat-name">{otherEmail}</div>
+                </div>
+              </div>
             );
           })}
         </div>
 
-        {/* НИЖНЯЯ ПАНЕЛЬ С НАСТРОЙКАМИ */}
         <div className="sidebar-footer">
           <button className="settings-btn" onClick={() => setIsSettingsOpen(true)}>
             ⚙️
           </button>
         </div>
 
-        {/* МОДАЛКА НАСТРОЕК */}
         {isSettingsOpen && (
-            <div className="settings-overlay" onClick={() => setIsSettingsOpen(false)}>
-              <div className="settings-modal" onClick={e => e.stopPropagation()}>
-                <div className="settings-header">
-                  <span>Настройки</span>
-                  <button className="settings-close" onClick={() => setIsSettingsOpen(false)}>×</button>
+          <div className="settings-overlay" onClick={() => setIsSettingsOpen(false)}>
+            <div className="settings-modal" onClick={e => e.stopPropagation()}>
+              <div className="settings-header">
+                <span>Настройки</span>
+                <button className="settings-close" onClick={() => setIsSettingsOpen(false)}>×</button>
+              </div>
+              <div className="settings-content">
+                <div className="settings-user-info">
+                  <div className="settings-avatar">{currentUser[0].toUpperCase()}</div>
+                  <div className="settings-email">{currentUser}</div>
                 </div>
-                <div className="settings-content">
-                  <div className="settings-user-info">
-                    <div className="settings-avatar">{currentUser[0].toUpperCase()}</div>
-                    <div className="settings-email">{currentUser}</div>
-                  </div>
-                  <button className="logout-btn" onClick={onLogout}>🚪 Выйти из аккаунта</button>
-                </div>
+                <button className="logout-btn" onClick={onLogout}>🚪 Выйти из аккаунта</button>
               </div>
             </div>
+          </div>
         )}
-      </aside>
+        
+      </div>
+
+      {/* ПОЛЗУНОК */}
+      <div 
+        className={`sidebar-resizer ${isResizing ? 'resizing' : ''}`} 
+        onMouseDown={startResizing}
+      ></div>
+    </aside>
   );
 }
