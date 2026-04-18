@@ -1,0 +1,187 @@
+/* --- FileModal.css --- */
+
+/* 1. ВНЕШНИЙ КОНТЕЙНЕР (ОКНО) */
+.file-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(4px);
+}
+
+.file-modal {
+    background-color: #1e2c3a; 
+    width: 400px;
+    max-width: 90%;
+    border-radius: 12px;
+    overflow: hidden;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* 2. ШАПКА И СПИСОК ФАЙЛОВ */
+.file-modal-header {
+    padding: 16px 20px;
+    display: flex; 
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    gap: 12px;
+}
+
+.file-icon-box {
+    width: 44px; height: 44px;
+    background-color: #3b88c3; 
+    border-radius: 50%;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.file-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* 3. ФИКС КРЕСТИКА (Удаляем белый фон) */
+.file-remove-btn {
+    background: transparent !important; /* Убирает системный фон */
+    border: none !important;
+    box-shadow: none !important;
+    color: #8b9eb0; 
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    margin-left: auto;
+    outline: none !important;
+    transition: color 0.2s;
+}
+
+.file-remove-btn:hover {
+    color: #ff5252;
+}
+
+/* 4. ИНПУТ ПОДПИСИ */
+.file-modal-caption {
+    padding: 10px 20px 20px;
+}
+
+.file-modal-caption input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid #3b88c3;
+    padding: 10px 0;
+    color: white;
+    outline: none;
+    font-size: 15px;
+}
+
+/* 5. ФУТЕР (Кнопки по краям) */
+.file-modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+.file-modal-right-actions {
+    display: flex;
+    gap: 20px;
+}
+
+.file-action-btn {
+    background: transparent;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 5px 10px;
+    transition: opacity 0.2s;
+}
+
+.file-action-btn.add-more { color: #3b88c3; }
+.file-action-btn.cancel { color: #8b9eb0; }
+.file-action-btn.send { color: #3b88c3; }
+
+/* 6. ФИКС ИКОНОК ФАЙЛОВ В ЧАТЕ (Чтобы не растягивались) */
+.message-attachment-container {
+    margin-top: 4px;
+    max-width: 280px;
+}
+
+.message-file-attachment {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: rgba(255, 255, 255, 0.07);
+    padding: 8px 12px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+}
+
+.file-icon-circle {
+    width: 44px;
+    height: 44px;
+    background-color: #3b88c3;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Жесткое ограничение размера SVG, чтобы она не была на весь экран */
+.message-file-attachment svg, 
+.document-icon {
+    width: 22px !important;
+    height: 22px !important;
+    fill: white;
+    display: block;
+}
+
+.chat-inline-image {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 8px;
+    display: block;
+    object-fit: cover;
+}
+
+/* Кнопка закрытия в шапке модалки (верхний правый угол) */
+.icon-btn {
+    all: unset; /* Сбрасываем стандартные стили кнопки */
+    background: transparent !important;
+    border: none !important;
+    color: #8b9eb0 !important; /* Серый цвет */
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    transition: color 0.2s;
+}
+
+.icon-btn:hover {
+    color: #ffffff !important; /* При наведении становится белым */
+}

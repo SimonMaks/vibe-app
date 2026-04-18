@@ -1,28 +1,31 @@
-export const formatTime = (ts) => {
-    if (!ts) return ''; // Если даты вообще нет, ничего не пишем
+// Форматирование времени (например: 14:35)
+export const formatTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('ru-RU', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+};
 
-    try {
-        let date;
+// Умное определение дня (Сегодня, Вчера или точная дата)
+export const getRelativeDate = (dateString) => {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    const today = new Date();
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
-        // Если это объект Firestore {seconds: ...}
-        if (ts.seconds) {
-            date = new Date(ts.seconds * 1000);
-        }
-        // Если это нормальная строка даты или миллисекунды
-        else if (typeof ts === 'string' || typeof ts === 'number') {
-            date = new Date(ts);
-        }
-        else {
-            return '';
-        }
-
-        // Если дата распарсилась криво (Invalid Date), возвращаем пустоту
-        if (isNaN(date.getTime())) {
-            return '';
-        }
-
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch (e) {
-        return '';
+    if (date.toDateString() === today.toDateString()) {
+        return 'Сегодня';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+        return 'Вчера';
+    } else {
+        return date.toLocaleDateString('ru-RU', {
+            day: 'numeric',
+            month: 'long'
+        }); // Вернет например "15 апреля"
     }
 };

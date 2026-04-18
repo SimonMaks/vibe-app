@@ -47,7 +47,8 @@ function App() {
                 onLogout={handleLogout} // Передаем выход в сайдбар, если нужно
             />
             <ChatArea
-                activeChat={activeChat}
+                activeChat={activeChat ? activeChat.id : null}
+                otherEmail={activeChat ? activeChat.email : ''}
                 currentUser={currentUser}
             />
         </div>
