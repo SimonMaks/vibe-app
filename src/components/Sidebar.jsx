@@ -140,7 +140,7 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
           <div className="chat-list-header">ДИАЛОГИ</div>
           {chats.map(chat => {
             const otherEmail = chat.participants.find(p => p !== currentUser);
-            const isActive = activeChat?.id === chat.id;
+            const isActive = activeChat === chat.id;
             return (
               <div
                 key={chat.id}

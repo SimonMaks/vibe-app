@@ -5,21 +5,27 @@ import Login from './components/Login.jsx';
 
 function App() {
     const [currentUser, setCurrentUser] = useState(null);
-    const [activeChat, setActiveChat] = useState(null); // Стейт активного чата
+    const [activeChat, setActiveChat] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // 1. Проверка сессии при запуске
+    // ⚡ Простая локальная проверка
     useEffect(() => {
         const savedUser = localStorage.getItem('chat-user');
-        if (savedUser) {
+        const token = localStorage.getItem('chat-token');
+        
+        if (savedUser && token) {
             setCurrentUser(savedUser);
+        } else {
+            // Если нет токена - чистим мусор
+            localStorage.removeItem('chat-user');
+            localStorage.removeItem('chat-token');
         }
         setIsLoading(false);
     }, []);
 
-    // Функция выхода (Logout)
     const handleLogout = () => {
         localStorage.removeItem('chat-user');
+        localStorage.removeItem('chat-token');
         setCurrentUser(null);
         setActiveChat(null);
     };

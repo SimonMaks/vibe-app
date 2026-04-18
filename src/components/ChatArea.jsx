@@ -3,14 +3,14 @@ import { io } from 'socket.io-client';
 import { SOCKET_URL, API_URL } from '../api/config';
 import { formatTime, getRelativeDate } from '../utils/dateUtils';
 import { getAuth } from 'firebase/auth';
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+// ⚡ УДАЛИЛИ FIREBASE STORAGE - он нам больше не нужен!
 import bookmarkIcon from '../assets/clip.svg'; 
 import './ChatArea.css';
 import './Messages.css';
 import './FileModal.css';
 import './UIComponents.css';
 
-// Инициализация сокета
+// Инициализация сокета (пока без подключения)
 const socket = io(SOCKET_URL, { autoConnect: false });
 
 export default function ChatArea({ activeChat, otherEmail, currentUser }) {
@@ -41,10 +41,11 @@ export default function ChatArea({ activeChat, otherEmail, currentUser }) {
   useEffect(() => {
     if (!activeChat) return;
 
+    const auth = getAuth();
+
     // 1. Загрузка старых сообщений из БД
     const fetchMessages = async () => {
       try {
-        const auth = getAuth();
         const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
         
         const response = await fetch(`${API_URL}/api/messages/${activeChat}`, {
@@ -60,11 +61,20 @@ export default function ChatArea({ activeChat, otherEmail, currentUser }) {
       }
     };
 
-    fetchMessages();
+    // 2. Настройка и подключение к Socket.io
+    const setupSockets = async () => {
+      const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+      
+      // ⚡ ПЕРЕДАЕМ ТОКЕН В СОКЕТ, ЧТОБЫ ПРОЙТИ ФЕЙСКОНТРОЛЬ НА БЭКЕНДЕ ⚡
+      socket.auth = { token };
+      socket.connect();
+      
+      // ⚡ ИСПРАВИЛИ НАЗВАНИЕ СОБЫТИЯ НА join_chat (как ждет бэкенд)
+      socket.emit('join_chat', activeChat);
+    };
 
-    // 2. Подключение к Socket.io для реального времени
-    socket.connect();
-    socket.emit('joinRoom', activeChat);
+    fetchMessages();
+    setupSockets();
 
     const handleNewMessage = (newMsg) => {
       setMessages((prev) => {
@@ -84,8 +94,7 @@ export default function ChatArea({ activeChat, otherEmail, currentUser }) {
     // Очистка при смене чата
     return () => {
       socket.off('message', handleNewMessage);
-      socket.emit('leaveRoom', activeChat);
-      socket.disconnect();
+      socket.disconnect(); // Просто отключаемся, бэкенд сам поймет, что мы ушли
     };
   }, [activeChat, currentUser]);
 
@@ -151,7 +160,7 @@ export default function ChatArea({ activeChat, otherEmail, currentUser }) {
     setSelectedFiles([]);
     setFileCaption('');
     setShowFileModal(false);
-    setIsUploading(false); // Страховка: если окно закрыто, загрузка не должна висеть
+    setIsUploading(false); 
   };
 
   // ==========================================
@@ -164,28 +173,18 @@ export default function ChatArea({ activeChat, otherEmail, currentUser }) {
 
     setIsUploading(true);
     const filesToUpload = [...selectedFiles]; 
-    const tempMessageId = Date.now().toString();
-
-    // Оптимистичное обновление (как и было)
-    const optimisticPayload = {
-        id: tempMessageId,
-        text: textToSend,
-        sender: currentUser,
-        files: filesToUpload.map(f => ({ name: f.name, size: f.size, type: f.type, url: URL.createObjectURL(f), isLoading: true })),
-        createdAt: new Date().toISOString()
-    };
-    setMessages(prev => [...prev, optimisticPayload]);
+    
+    // Очищаем инпуты сразу для отзывчивости
     setInputText('');
     cancelFileSelection();
+    setReplyTo(null); // Сбрасываем ответ после отправки
 
     try {
-        // УПАКОВЫВАЕМ ДАННЫЕ В ФОРМУ (FormData нужен для файлов)
         const formData = new FormData();
         formData.append('text', textToSend);
         formData.append('sender', currentUser);
         if (replyTo) formData.append('replyTo', JSON.stringify(replyTo));
         
-        // Добавляем каждый файл
         filesToUpload.forEach(file => {
             formData.append('files', file);
         });
@@ -193,7 +192,6 @@ export default function ChatArea({ activeChat, otherEmail, currentUser }) {
         const auth = getAuth();
         const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
 
-        // Отправляем одним запросом (без Content-Type, браузер сам подставит multipart/form-data)
         const response = await fetch(`${API_URL}/api/messages/${activeChat}`, {
             method: 'POST',
             headers: {
@@ -203,10 +201,11 @@ export default function ChatArea({ activeChat, otherEmail, currentUser }) {
         });
 
         if (!response.ok) throw new Error("Ошибка сервера");
+        // Примечание: Мы убрали "оптимистичное добавление", так как SQLite генерирует
+        // настоящий ID, а сокеты работают мгновенно. Сообщение появится само через сокет!
 
     } catch (err) {
         console.error("Ошибка при отправке:", err);
-        setMessages(prev => prev.filter(m => m.id !== tempMessageId));
         alert("Ошибка при отправке. Попробуйте снова.");
     } finally {
         setIsUploading(false); 
@@ -250,7 +249,6 @@ export default function ChatArea({ activeChat, otherEmail, currentUser }) {
                       )}
                       
                       {/* Отображение прикрепленных файлов */}
-                      {/* Красивое отображение файлов (Telegram Style) */}
                       {msg.files && msg.files.map((f, idx) => {
                         const isImage = f.type?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(f.name);
 
@@ -319,7 +317,6 @@ export default function ChatArea({ activeChat, otherEmail, currentUser }) {
                       <span className="file-name">{file.name}</span>
                       <span className="file-size">{(file.size / 1024).toFixed(1)} KB</span>
                     </div>
-                    {/* МЕНЯЕМ ТУТ: div вместо button и исправили index */}
                     <div className="file-remove-btn" onClick={() => removeFile(index)}>
                     ✕
                     </div>                  

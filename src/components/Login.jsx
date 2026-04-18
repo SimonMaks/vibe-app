@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { API_URL } from '../api/config';
 import { auth } from '../firebase';
-import { signInWithCustomToken } from 'firebase/auth'; // 🔐 ДОБАВИЛИ ИМПОРТ
 import './Login.css';
 
 export default function Login({ onLoginSuccess }) {
@@ -60,9 +59,8 @@ export default function Login({ onLoginSuccess }) {
       if (data.success && data.token) {
         console.log("Код верный, токен получен. Пытаюсь войти в Firebase...");
         
-        // 🔐 БРОНЯ: Используем ТОТ САМЫЙ auth, который мы импортировали сверху
-        // Убедись, что в начале файла написано: import { auth } from '../api/firebase';
-        const userCredential = await signInWithCustomToken(auth, data.token);
+        localStorage.setItem('chat-token', data.token);
+        localStorage.setItem('chat-user', email.toLowerCase().trim());
         
         console.log("Вход в Firebase успешен!", userCredential.user);
 
