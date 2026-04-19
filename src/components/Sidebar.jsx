@@ -39,11 +39,12 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
   }, [isResizing, resize, stopResizing]);
 
   // --- ИСПРАВЛЕННАЯ ЛОГИКА ЗАГРУЗКИ (Чтобы чаты не пропадали) ---
+  // src/components/Sidebar.jsx
   const fetchMyChats = async () => {
     try {
-      const token = localStorage.getItem('chat-token'); // Берем твой новый JWT
+      const token = localStorage.getItem('chat-token'); // Получаем наш JWT
       const response = await fetch(`${API_URL}/api/chats?email=${currentUser}`, {
-        headers: { 'Authorization': `Bearer ${token}` } // Добавляем паспорт для входа
+        headers: { 'Authorization': `Bearer ${token}` } // Отправляем паспорт серверу
       });
       const data = await response.json();
       if (Array.isArray(data)) setChats(data);
@@ -64,7 +65,7 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
       try {
         const token = localStorage.getItem('chat-token');
         const response = await fetch(`${API_URL}/api/search?name=${encodeURIComponent(val)}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('chat-token')}` }
         });
         const data = await response.json();
         setSearchResults(data.filter(u => u.email !== currentUser));
@@ -93,7 +94,7 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${localStorage.getItem('chat-token')}`
           },
           body: JSON.stringify({ participants: [currentUser, targetUser.email] })
         });
