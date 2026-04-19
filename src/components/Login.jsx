@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { API_URL } from '../api/config';
-import { auth } from '../firebase';
 import './Login.css';
 
 export default function Login({ onLoginSuccess }) {
@@ -57,14 +56,12 @@ export default function Login({ onLoginSuccess }) {
       console.log("Ответ от сервера:", data);
 
       if (data.success && data.token) {
-        console.log("Код верный, токен получен. Пытаюсь войти в Firebase...");
+        console.log("Код верный! Сохраняем свой токен (JWT)...");
         
+        // ⚡ НАШ СВЕЖИЙ ЛОКАЛЬНЫЙ ВХОД (БЕЗ FIREBASE)
         localStorage.setItem('chat-token', data.token);
         localStorage.setItem('chat-user', email.toLowerCase().trim());
         
-        console.log("Вход в Firebase успешен!", userCredential.user);
-
-        localStorage.setItem('chat-user', email.toLowerCase().trim());
         onLoginSuccess(email.toLowerCase().trim());
       } else {
         setError(data.error || 'Неверный код или ошибка сервера');

@@ -8,29 +8,18 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
   const [searchResults, setSearchResults] = useState([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  // --- ЛОГИКА ИЗМЕНЕНИЯ РАЗМЕРА ---
+  // --- ЛОГИКА ИЗМЕНЕНИЯ РАЗМЕРА (Твоя оригинальная) ---
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef(null);
 
-  const startResizing = useCallback((e) => {
-    setIsResizing(true);
-    e.preventDefault();
-  }, []);
-
-  const stopResizing = useCallback(() => {
-    setIsResizing(false);
-  }, []);
-
+  const startResizing = useCallback((e) => { setIsResizing(true); e.preventDefault(); }, []);
+  const stopResizing = useCallback(() => { setIsResizing(false); }, []);
   const resize = useCallback((e) => {
     if (isResizing && sidebarRef.current) {
       let newWidth = e.clientX;
-      const minWidth = 250;
-      const maxWidth = window.innerWidth * 0.6;
-
-      if (newWidth < minWidth) newWidth = minWidth;
-      if (newWidth > maxWidth) newWidth = maxWidth;
-
+      if (newWidth < 250) newWidth = 250;
+      if (newWidth > window.innerWidth * 0.6) newWidth = window.innerWidth * 0.6;
       setSidebarWidth(newWidth);
     }
   }, [isResizing]);
@@ -39,11 +28,9 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
     if (isResizing) {
       window.addEventListener('mousemove', resize);
       window.addEventListener('mouseup', stopResizing);
-      document.body.style.userSelect = 'none';
     } else {
       window.removeEventListener('mousemove', resize);
       window.removeEventListener('mouseup', stopResizing);
-      document.body.style.userSelect = 'auto'; 
     }
     return () => {
       window.removeEventListener('mousemove', resize);
@@ -51,15 +38,13 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
     };
   }, [isResizing, resize, stopResizing]);
 
-  useEffect(() => {
-    if (currentUser) {
-      fetchMyChats();
-    }
-  }, [currentUser]);
-
+  // --- ИСПРАВЛЕННАЯ ЛОГИКА ЗАГРУЗКИ (Чтобы чаты не пропадали) ---
   const fetchMyChats = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/chats?email=${currentUser}`);
+      const token = localStorage.getItem('chat-token'); // Берем твой новый JWT
+      const response = await fetch(`${API_URL}/api/chats?email=${currentUser}`, {
+        headers: { 'Authorization': `Bearer ${token}` } // Добавляем паспорт для входа
+      });
       const data = await response.json();
       if (Array.isArray(data)) setChats(data);
     } catch (err) {
@@ -67,13 +52,20 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
     }
   };
 
+  useEffect(() => {
+    if (currentUser) fetchMyChats();
+  }, [currentUser]);
+
+  // --- ЛОГИКА ПОИСКА (С авторизацией) ---
   const handleSearch = async (e) => {
     const val = e.target.value;
     setSearchQuery(val);
-
     if (val.trim().length > 1) {
       try {
-        const response = await fetch(`${API_URL}/api/search?name=${encodeURIComponent(val)}`);
+        const token = localStorage.getItem('chat-token');
+        const response = await fetch(`${API_URL}/api/search?name=${encodeURIComponent(val)}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         const data = await response.json();
         setSearchResults(data.filter(u => u.email !== currentUser));
       } catch (err) {
@@ -84,20 +76,30 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
     }
   };
 
+  // --- ЛОГИКА СОЗДАНИЯ ЧАТА (Оптимистичное обновление) ---
   const startChat = async (targetUser) => {
     try {
-      const existing = chats.find(c => c.participants.includes(targetUser.email));
+      const token = localStorage.getItem('chat-token');
+      const existing = chats.find(c => {
+        let p = [];
+        try { p = Array.isArray(c.participants) ? c.participants : JSON.parse(c.participants); } catch(e) {}
+        return p.includes(targetUser.email);
+      });
+
       if (existing) {
         onSelectChat(existing.id, targetUser.email);
       } else {
         const response = await fetch(`${API_URL}/api/chats`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify({ participants: [currentUser, targetUser.email] })
         });
         const newChat = await response.json();
         if (newChat.id) {
-          await fetchMyChats();
+          setChats(prev => [newChat, ...prev]); // Добавляем сразу в список
           onSelectChat(newChat.id, targetUser.email);
         }
       }
@@ -109,21 +111,10 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
   };
 
   return (
-    <aside 
-      className="sidebar" 
-      ref={sidebarRef} 
-      style={{ width: `${sidebarWidth}px` }}
-    >
+    <aside className="sidebar" ref={sidebarRef} style={{ width: `${sidebarWidth}px` }}>
       <div className="sidebar-inner-content">
-        
         <div className="search-section">
-          <input
-            type="text"
-            placeholder="Поиск по имени..."
-            value={searchQuery}
-            onChange={handleSearch}
-            className="search-input"
-          />
+          <input type="text" placeholder="Поиск по имени..." value={searchQuery} onChange={handleSearch} className="search-input" />
           {searchResults.length > 0 && (
             <div className="search-results">
               {searchResults.map(user => (
@@ -139,17 +130,14 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
         <div className="chat-list-wrapper">
           <div className="chat-list-header">ДИАЛОГИ</div>
           {chats.map(chat => {
-            const otherEmail = chat.participants.find(p => p !== currentUser);
-            const isActive = activeChat === chat.id;
+            let p = [];
+            try { p = Array.isArray(chat.participants) ? chat.participants : JSON.parse(chat.participants); } catch(e) {}
+            const otherEmail = p.find(email => email !== currentUser) || "Чат";
+            const isActive = activeChat?.id === chat.id;
+
             return (
-              <div
-                key={chat.id}
-                onClick={() => onSelectChat(chat.id, otherEmail)}
-                className={`chat-list-item ${isActive ? 'active' : ''}`}
-              >
-                <div className="chat-avatar">
-                  {otherEmail ? otherEmail[0].toUpperCase() : '?'}
-                </div>
+              <div key={chat.id} onClick={() => onSelectChat(chat.id, otherEmail)} className={`chat-list-item ${isActive ? 'active' : ''}`}>
+                <div className="chat-avatar">{otherEmail[0].toUpperCase()}</div>
                 <div className="chat-info">
                   <div className="chat-name">{otherEmail}</div>
                 </div>
@@ -159,9 +147,7 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
         </div>
 
         <div className="sidebar-footer">
-          <button className="settings-btn" onClick={() => setIsSettingsOpen(true)}>
-            ⚙️
-          </button>
+          <button className="settings-btn" onClick={() => setIsSettingsOpen(true)}>⚙️</button>
         </div>
 
         {isSettingsOpen && (
@@ -176,19 +162,13 @@ export default function Sidebar({ currentUser, activeChat, onSelectChat, onLogou
                   <div className="settings-avatar">{currentUser[0].toUpperCase()}</div>
                   <div className="settings-email">{currentUser}</div>
                 </div>
-                <button className="logout-btn" onClick={onLogout}>🚪 Выйти из аккаунта</button>
+                <button className="logout-btn" onClick={onLogout}>🚪 Выйти</button>
               </div>
             </div>
           </div>
         )}
-        
       </div>
-
-      {/* ПОЛЗУНОК */}
-      <div 
-        className={`sidebar-resizer ${isResizing ? 'resizing' : ''}`} 
-        onMouseDown={startResizing}
-      ></div>
+      <div className="sidebar-resizer" onMouseDown={startResizing}></div>
     </aside>
   );
 }
